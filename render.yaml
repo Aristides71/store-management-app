@@ -4,7 +4,7 @@ services:
   - type: web
     name: store-management-app
     env: static
-    buildCommand: npm install && npm run build
+    buildCommand: npm run build:render
     staticPublishPath: ./dist
     envVars:
       - key: VITE_SUPABASE_URL
