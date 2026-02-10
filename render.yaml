@@ -1,11 +1,11 @@
 # Configuração de Deploy no Render para Store Management App
-
 services:
   - type: web
     name: store-management-app
-    env: static
-    buildCommand: npm run build:render
-    staticPublishPath: ./dist
+    buildCommand: npm ci && npm run build
+    env: node
+    startCommand: npm run preview -- --port $PORT    
+    publishPath: dist
     envVars:
       - key: VITE_SUPABASE_URL
         sync: false
@@ -22,9 +22,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-
-databases:
-  - name: store-management-db
-    databaseName: store_management
-    user: store_user
-    plan: starter
