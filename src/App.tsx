@@ -4,6 +4,13 @@ import AuthProvider from './components/AuthProvider'
 import Sidebar from './components/Sidebar'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import CustomersPage from './pages/Customers'
+import ProductsPage from './pages/Products'
+import VendasPage from './pages/Vendas'
+import ExpensesPage from './pages/Expenses'
+import ReportsPage from './pages/Reports'
+import ConfiguracoesPage from './pages/Configuracoes'
+import TestPage from './pages/Test'
 
 // Componente para proteger rotas
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -55,10 +62,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-                    <p className="text-gray-600">Módulo de clientes em desenvolvimento...</p>
-                  </div>
+                  <CustomersPage />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -68,10 +72,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-                    <p className="text-gray-600">Módulo de produtos em desenvolvimento...</p>
-                  </div>
+                  <ProductsPage />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -81,10 +82,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Vendas</h1>
-                    <p className="text-gray-600">Módulo de vendas em desenvolvimento...</p>
-                  </div>
+                  <VendasPage />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -94,10 +92,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Despesas</h1>
-                    <p className="text-gray-600">Módulo de despesas em desenvolvimento...</p>
-                  </div>
+                  <ExpensesPage />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -107,10 +102,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Relatórios</h1>
-                    <p className="text-gray-600">Módulo de relatórios em desenvolvimento...</p>
-                  </div>
+                  <ReportsPage />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -120,10 +112,17 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
-                    <p className="text-gray-600">Módulo de configurações em desenvolvimento...</p>
-                  </div>
+                  <ConfiguracoesPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/test"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <TestPage />
                 </MainLayout>
               </ProtectedRoute>
             }

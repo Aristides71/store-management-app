@@ -17,6 +17,9 @@ export default function Login() {
     setError('')
 
     try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        throw new Error('Configuração do Supabase ausente. Verifique .env (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY).')
+      }
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

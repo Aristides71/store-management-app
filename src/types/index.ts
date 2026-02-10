@@ -52,6 +52,7 @@ export interface Sale {
   payment_method: 'cash' | 'card' | 'pix'
   sale_date: string
   customer?: Customer
+  sale_items?: SaleItem[]
 }
 
 export interface SaleItem {

@@ -9,11 +9,11 @@ interface AuthProviderProps {
 
 export default function AuthProvider({ children }: AuthProviderProps) {
   const navigate = useNavigate()
-  const { user, setUser, setIsLoading } = useAuthStore()
+  const { user, setUser, setIsLoading, setStore } = useAuthStore()
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession()
+    .then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser({
           id: session.user.id,
@@ -21,12 +21,21 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           role: 'admin',
           created_at: session.user.created_at
         })
+        const { data: stores } = await supabase
+          .from('stores')
+          .select('*')
+          .eq('owner_id', session.user.id)
+          .limit(1)
+        if (stores && stores.length > 0) {
+          setStore(stores[0])
+        }
       }
       setIsLoading(false)
     })
+    .catch(() => setIsLoading(false))
 
     // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser({
           id: session.user.id,
@@ -34,8 +43,17 @@ export default function AuthProvider({ children }: AuthProviderProps) {
           role: 'admin',
           created_at: session.user.created_at
         })
+        const { data: stores } = await supabase
+          .from('stores')
+          .select('*')
+          .eq('owner_id', session.user.id)
+          .limit(1)
+        if (stores && stores.length > 0) {
+          setStore(stores[0])
+        }
       } else {
         setUser(null)
+        setStore(null)
         navigate('/')
       }
     })
