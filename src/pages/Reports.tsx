@@ -9,13 +9,16 @@ export default function Reports() {
   const { store } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState('current')
+  const [resolution, setResolution] = useState<'day' | 'month' | 'year'>('day')
+  const [customStart, setCustomStart] = useState<string>('')
+  const [customEnd, setCustomEnd] = useState<string>('')
   const [reportData, setReportData] = useState<any>({})
 
   useEffect(() => {
     if (store) {
       loadReportData()
     }
-  }, [store, selectedPeriod])
+  }, [store, selectedPeriod, resolution, customStart, customEnd])
 
   const loadReportData = async () => {
     if (!store) return
@@ -23,12 +26,15 @@ export default function Reports() {
     setLoading(true)
     try {
       const now = new Date()
-      const startDate = selectedPeriod === 'current' 
+      let startDate = selectedPeriod === 'current' 
         ? new Date(now.getFullYear(), now.getMonth(), 1)
         : new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      const endDate = selectedPeriod === 'current'
+      let endDate = selectedPeriod === 'current'
         ? new Date(now.getFullYear(), now.getMonth() + 1, 0)
         : new Date(now.getFullYear(), now.getMonth(), 0)
+
+      if (customStart) startDate = new Date(customStart)
+      if (customEnd) endDate = new Date(customEnd)
 
       // Vendas do período
       const { data: salesData, error: salesError } = await supabase
@@ -68,24 +74,27 @@ export default function Reports() {
         sum + (sale.sale_items?.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0) || 0), 0
       ) || 0
 
-      // Vendas por dia (últimos 7 dias)
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date()
-        date.setDate(date.getDate() - i)
-        return date
-      }).reverse()
-
-      const dailySales = last7Days.map(date => {
-        const dateStr = date.toISOString().split('T')[0]
-        const daySales = salesData?.filter((sale: any) => 
-          sale.sale_date.split('T')[0] === dateStr
-        ) || []
-        
-        return {
-          date: date.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric' }),
-          total: daySales.reduce((sum: number, sale: any) => sum + sale.total_amount, 0)
+      // Série temporal agregada conforme resolução
+      const bucketKey = (d: Date) => {
+        if (resolution === 'day') return d.toISOString().split('T')[0]
+        if (resolution === 'month') return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+        return `${d.getFullYear()}`
+      }
+      const labelFor = (key: string) => {
+        if (resolution === 'day') return new Date(key).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        if (resolution === 'month') {
+          const [y,m] = key.split('-')
+          return `${m}/${y}`
         }
+        return key
+      }
+      const buckets: Record<string, number> = {}
+      ;(salesData || []).forEach((sale: any) => {
+        const d = new Date(sale.sale_date)
+        const key = bucketKey(d)
+        buckets[key] = (buckets[key] || 0) + sale.total_amount
       })
+      const dailySales = Object.keys(buckets).sort().map((k) => ({ date: labelFor(k), total: buckets[k] }))
 
       // Vendas por categoria
       const categorySales = salesData?.reduce((acc: any[], sale: any) => {
@@ -162,6 +171,17 @@ export default function Reports() {
                 <option value="current">Mês Atual</option>
                 <option value="previous">Mês Anterior</option>
               </select>
+              <select
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value as any)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="day">Dias</option>
+                <option value="month">Meses</option>
+                <option value="year">Anos</option>
+              </select>
+              <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="px-3 py-2 border rounded" />
+              <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="px-3 py-2 border rounded" />
             </div>
           </div>
         </div>

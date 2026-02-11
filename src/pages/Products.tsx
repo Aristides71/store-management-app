@@ -22,10 +22,14 @@ export default function Products() {
     stock_quantity: 0,
     active: true
   })
+  const [categories, setCategories] = useState<string[]>([])
+  const [addingCategory, setAddingCategory] = useState(false)
+  const [newCategory, setNewCategory] = useState('')
 
   useEffect(() => {
     if (store) {
       loadProducts()
+      loadCategories()
     }
   }, [store])
 
@@ -48,6 +52,31 @@ export default function Products() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadCategories = async () => {
+    if (!store) return
+    try {
+      // Tenta buscar da tabela 'categories'
+      const { data, error } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('store_id', store.id)
+        .order('name', { ascending: true })
+      if (!error && data) {
+        setCategories(data.map((c: any) => c.name))
+        return
+      }
+    } catch (_) {}
+    // Fallback: extrair categorias distintas dos produtos
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('category')
+        .eq('store_id', store.id)
+      const uniq = Array.from(new Set((data || []).map((p: any) => p.category).filter(Boolean)))
+      setCategories(uniq.sort())
+    } catch (_) {}
   }
 
   const filteredProducts = products.filter(product =>
@@ -87,11 +116,33 @@ export default function Products() {
       }
 
       await loadProducts()
+      await loadCategories()
       handleCancel()
       alert(editingProduct ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!')
     } catch (error) {
       console.error('Erro ao salvar produto:', error)
       alert('Erro ao salvar produto')
+    }
+  }
+
+  const handleAddCategory = async () => {
+    if (!store || !newCategory.trim()) return
+    // Tenta inserir na tabela 'categories'; se não existir, apenas adiciona localmente
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .insert({ name: newCategory.trim(), store_id: store.id })
+      if (error) throw error
+      setAddingCategory(false)
+      setNewCategory('')
+      await loadCategories()
+      setFormData({ ...formData, category: newCategory.trim() })
+    } catch (_) {
+      const next = Array.from(new Set([...categories, newCategory.trim()])).sort()
+      setCategories(next)
+      setAddingCategory(false)
+      setFormData({ ...formData, category: newCategory.trim() })
+      setNewCategory('')
     }
   }
 
@@ -200,12 +251,32 @@ export default function Products() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Categoria
                   </label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Selecione...</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={() => setAddingCategory(true)} className="px-3 py-2 border rounded-md">Nova</button>
+                  </div>
+                  {addingCategory && (
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        placeholder="Nome da categoria"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button type="button" onClick={handleAddCategory} className="px-3 py-2 bg-blue-600 text-white rounded-md">Adicionar</button>
+                      <button type="button" onClick={() => { setAddingCategory(false); setNewCategory('') }} className="px-3 py-2 border rounded-md">Cancelar</button>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="flex items-center space-x-2">
