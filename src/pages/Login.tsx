@@ -20,10 +20,12 @@ export default function Login() {
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
         throw new Error('Configuração do Supabase ausente. Verifique .env (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY).')
       }
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      const signIn = supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       })
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo excedido ao conectar ao Supabase. Verifique sua rede e as variáveis de ambiente.')), 12000))
+      const { data, error } = await Promise.race([signIn, timeout]) as any
 
       if (error) throw error
 
